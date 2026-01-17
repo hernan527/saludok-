@@ -74,6 +74,7 @@ function finalizarWhats(formClass) {
 }
 
 function finalizar(formClass) {
+  console.log('fianlizar')
   console.log(formClass)
     var form = document.querySelector(formClass);
     console.log(form)

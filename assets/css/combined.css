@@ -3131,6 +3131,24 @@ body {
             box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
 
+                .loader-form {
+            display: none;
+            width: 52px;
+            height: 52px;
+            background-color: white;
+            background-image: url(gif-enviando.gif);
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: 40px;
+            border-radius: 100%;
+            position: relative;
+            left: 50%;
+            bottom: 20px;
+            margin: 0 0 0 -26px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+
         /* Botón principal destacado */
         .cta-principal {
             background-color: #FF6B00 ;

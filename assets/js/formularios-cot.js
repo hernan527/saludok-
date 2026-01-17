@@ -1,335 +1,135 @@
+(function ($) {
+    $(document).ready(function () {
+        
+        // --- 1. CONFIGURACIÓN INICIAL ---
+        // Ocultamos todos los campos que dependen de una acción
+        const camposOcultos = ".hijos_num, .campo-edad, .campo-edad-pareja, .edad-varios, .edad-solo, .sueldo, .monotributo, .possui-plano, .possui-cnpj";
+        $(camposOcultos).hide();
 
-(function (jQuery) {
+        // Función de Scroll Genérica para no repetir código
+        function scrollAlCampo($elemento) {
+            if ($elemento.length) {
+                $('html, body').stop().animate({
+                    scrollTop: $elemento.offset().top - ($(window).height() / 2)
+                }, 800);
+            }
+        }
 
-  jQuery(document).ready(function(){
-  
+        // --- 2. SELECCIÓN DE MARCAS (Bandeiras) ---
+        $(".bandeiras img").click(function () {
+            const $form = $(this).closest('form');
+            const srcImagem = $(this).attr("src");
+            const idOperadora = $(this).attr("data-id-operadora");
+            const claseCss = $(this).data("data-classe-operadora");
 
-   
-      
-  
-  // TIPO DO PLANO
-  jQuery(".hijos_num").hide();
-  jQuery(".campo-edad").hide();
-  jQuery(".campo-edad-pareja").hide();
-  jQuery(".edad-varios").hide();
-  jQuery(".edad-solo").hide();
-  jQuery(".sueldo").hide();
-  jQuery(".monotributo").hide();
-  jQuery(".possui-plano").hide();
-  jQuery(".possui-cnpj").hide();
-  
-  
-  jQuery('.btn-vos').click(function() {
-  jQuery(".tipo-de-plano b").removeClass('ativa');
-  jQuery(this).addClass('ativa');
-  jQuery(".tipo-de-plano p").addClass('ok');
-  jQuery('input:radio[name=idCapitas]')[0].checked = true;
-  jQuery(".hijos_num").fadeOut();
-  jQuery("#idCapitas-error").fadeOut();
-  
-  jQuery(".edad-varios").fadeOut();
-  
-  jQuery(".campo-edad").fadeIn(function() {
-      jQuery('html, body').animate({
-          scrollTop: jQuery(".campo-edad").offset().top - (jQuery(window).height() / 2)
-        }, 1000);    
-      });
-      
-  jQuery(".edad-solo").fadeIn();
-  jQuery(".campo-edad-pareja").fadeOut();
-  
-  
-  
-  
-  });
-  
-  jQuery('.btn-pareja').click(function() {
-  jQuery(".tipo-de-plano b").removeClass('ativa');
-  jQuery(this).addClass('ativa');
-  jQuery(".tipo-de-plano p").addClass('ok');
-  jQuery('input:radio[name=idCapitas]')[1].checked = true;
-  jQuery(".hijos_num").fadeOut();
-  jQuery("#idCapitas-error").fadeOut();
-  
-  jQuery(".edad-varios").fadeIn();
-  jQuery(".campo-edad-pareja").fadeIn();
-  jQuery(".campo-edad").fadeIn(function() {
-      jQuery('html, body').animate({
-          scrollTop: jQuery(".campo-edad-pareja").offset().top - (jQuery(window).height() / 2)
-        }, 1000);
-  });    jQuery(".edad-solo").fadeOut();
-  
-  
-  
-  
-  });
-  
-  jQuery('.btn-vosehijo').click(function() {
-  jQuery(".tipo-de-plano b").removeClass('ativa');
-  jQuery(this).addClass('ativa');
-  jQuery(".tipo-de-plano p").addClass('ok');
-  jQuery('input:radio[name=idCapitas]')[2].checked = true;
-  jQuery(".hijos_num").fadeIn();
-  jQuery("#idCapitas-error").fadeOut();
-  jQuery(".edad-varios").fadeIn();
-  jQuery(".edad-solo").fadeOut();
-  
-  jQuery(".campo-edad-pareja").fadeOut();
-  jQuery(".campo-edad").fadeIn(function() {
-      jQuery('html, body').animate({
-          scrollTop: jQuery(".campo-edades-hijos").offset().top - (jQuery(window).height() / 2)
-        }, 1000);
-  });
-  
-  
-  
-  
-  });
-  
-  jQuery('.btn-parejaehijo').click(function() {
-  jQuery(".tipo-de-plano b").removeClass('ativa');
-  jQuery(this).addClass('ativa');
-  jQuery(".tipo-de-plano p").addClass('ok');
-  jQuery('input:radio[name=idCapitas]')[3].checked = true;
-  jQuery(".hijos_num").fadeIn();
-  jQuery("#idCapitas-error").fadeOut();
-  jQuery(".edad-varios").fadeIn();
-  jQuery(".edad-solo").fadeOut();
-  
-  jQuery(".campo-edad-pareja").fadeIn();
-  jQuery(".campo-edad").fadeIn(function() {
-      jQuery('html, body').animate({
-          scrollTop: jQuery(".campo-edades-hijos").offset().top - (jQuery(window).height() / 2)
-        }, 1000);
-  });
+            $form.find('.recebe-img img').remove();
+            $form.find('.recebe-img').append(`<img src="${srcImagem}">`).attr('id', claseCss);
+            $form.find(".campo-operadora").val(idOperadora);
+            $form.find(".plano-selecionado").fadeIn();
+        });
 
-  
-  
-  
-  });
-  jQuery('.campo-edad').on('input', function() {
-  jQuery(".possui-plano").fadeIn(function() {
-      jQuery('html, body').animate({
-          scrollTop: jQuery(".possui-plano").offset().top - (jQuery(window).height() / 2)
-        }, 1000);
-  });
-  
+        // --- 3. LÓGICA DE TIPO DE PLANO (Refactorizada) ---
+        $('.btn-vos, .btn-pareja, .btn-vosehijo, .btn-parejaehijo').click(function () {
+            const $form = $(this).closest('form');
+            
+            // UI: Activar botón
+            $form.find(".tipo-de-plano b").removeClass('ativa');
+            $(this).addClass('ativa');
+            $form.find(".tipo-de-plano p").addClass('ok');
+            $form.find("#idCapitas-error").fadeOut();
+
+            // Lógica por tipo
+            if ($(this).hasClass('btn-vos')) {
+                $form.find('input:radio[name=idCapitas]')[0].checked = true;
+                $form.find(".hijos_num, .edad-varios, .campo-edad-pareja").fadeOut();
+                $form.find(".campo-edad, .edad-solo").fadeIn();
+            } 
+            else if ($(this).hasClass('btn-pareja')) {
+                $form.find('input:radio[name=idCapitas]')[1].checked = true;
+                $form.find(".hijos_num, .edad-solo").fadeOut();
+                $form.find(".edad-varios, .campo-edad-pareja, .campo-edad").fadeIn();
+            } 
+            else {
+                // Familiar (Vos + hijo o Pareja + hijo)
+                const esConPareja = $(this).hasClass('btn-parejaehijo');
+                $form.find('input:radio[name=idCapitas]')[esConPareja ? 3 : 2].checked = true;
+                $form.find(".edad-solo").fadeOut();
+                $form.find(".hijos_num, .edad-varios, .campo-edad").fadeIn();
+                $form.find(".campo-edad-pareja")[esConPareja ? 'fadeIn' : 'fadeOut']();
+            }
+
+            scrollAlCampo($form.find(".campo-edad"));
+        });
+
+        // --- 4. FLUJO DE OBRA SOCIAL ---
+        $('.btn-con-os').click(function () {
+            const $form = $(this).closest('form');
+            $form.find(".possui-plano b").removeClass('ativa');
+            $(this).addClass('ativa');
+            $form.find('input:radio[name=poseeOS]')[0].checked = true;
+            $form.find(".sueldo").fadeIn();
+            scrollAlCampo($form.find(".sueldo"));
+        });
+
+        $('.btn-sin-os').click(function () {
+            const $form = $(this).closest('form');
+            $form.find(".possui-plano b").removeClass('ativa');
+            $(this).addClass('ativa');
+            $form.find('input:radio[name=poseeOS]')[1].checked = true;
+            $form.find(".sueldo, .monotributo, .possui-cnpj").fadeOut();
+            scrollAlCampo($form.find(".campo-nome"));
+        });
+
+        // --- 5. MÁSCARAS (Clases para soportar múltiples formularios) ---
+        // Nota: Cambia los ID de tus inputs por estas clases en el HTML
+        $(".mask-edad").mask("00");
+        $(".mask-hijos").mask("9");
+        $(".mask-phone").mask("9000000000");
+
+        // Soporte para IDs antiguos (si no quieres cambiar el HTML aún)
+        $("#edad_1, #edad_2").mask("00");
+        $("#hijos_num").mask("9");
+        $("#telefone").mask("9000000000");
+
     });
+})(window.jQuery);
+
+
+jQuery(document).ready(function($) {
     
-  
-  // SE POSSUI OPERADORA
-  //jQuery(".operadora").hide();
-  jQuery('.btn-con-os').click(function() {
-  jQuery(".possui-plano b").removeClass('ativa');
-  jQuery(this).addClass('ativa');
-  jQuery(".possui-plano p").addClass('ok');
-  jQuery('input:radio[name=poseeOS]')[0].checked = true;
-  // jQuery(".possui-cnpj").fadeIn(function() {
-  //     jQuery('html, body').animate({
-  //         scrollTop: jQuery("#rel-os").offset().top - (jQuery(window).height() / 2)
-  //       }, 1000);
-  // });
-  jQuery(".sueldo").fadeIn(function() {
-      jQuery('html, body').animate({
-          scrollTop: jQuery(".sueldo").offset().top - (jQuery(window).height() / 2)
-        }, 1000);
-  });
-  jQuery('.sueldo').on('input', function() {
-  jQuery('html, body').animate({
-          scrollTop: jQuery(".campo-nome").offset().top - (jQuery(window).height() / 2)
-        }, 1000);
-  });
-  
-  jQuery("#poseeOS-error").fadeOut();
-  jQuery('.campo-nome').on('input', function() {
-      jQuery('html, body').animate({
-              scrollTop: jQuery(".campo-telefone").offset().top - (jQuery(window).height() / 2)
-            }, 1000);
-      });
-  });
-  jQuery('.campo-telefone').on('input', function() {
-      jQuery('html, body').animate({
-              scrollTop: jQuery(".campo-email").offset().top - (jQuery(window).height() / 2)
-            }, 1000);
-      });
-  
-  
-  jQuery('.btn-sin-os').click(function() {
-  jQuery(".possui-plano b").removeClass('ativa');
-  jQuery(this).addClass('ativa');
-  jQuery(".possui-plano p").addClass('ok');
-  jQuery('input:radio[name=poseeOS]')[1].checked = true;
-  //jQuery(".operadora").fadeOut();
-  jQuery("#poseeOS-error").fadeOut();
-  jQuery(".possui-cnpj").fadeOut();
-  jQuery(".monotributo").fadeOut();
-  jQuery(".sueldo").fadeOut();
-  
-  jQuery(".sueldo").hide();
-  jQuery(".monotributo").hide();
-  jQuery(".possui-cnpj b").removeClass('ativa');
-  jQuery(".possui-cnpj p").removeClass('ok');
-  jQuery('html, body').animate({
-      scrollTop: jQuery(".campo-nome").offset().top - (jQuery(window).height() / 2)
-    }, 1000);
-  
-  });
-  
-  // SE POSSUI CNPJ
-  
-  jQuery('.btn-rel-os').click(function() {
-  jQuery(".possui-cnpj b").removeClass('ativa');
-  jQuery(this).addClass('ativa');
-  jQuery(".possui-cnpj p").addClass('ok');
-  jQuery('input:radio[name=cualOS]')[0].checked = true;
-  jQuery("#cualOS-error").fadeOut();
-  jQuery(".sueldo").fadeIn();
-  jQuery(".monotributo").fadeOut();
-  jQuery(".datos-contacto").fadeIn();
-  
-  });
-  
-  jQuery('.btn-mon-os').click(function() {
-  jQuery(".possui-cnpj b").removeClass('ativa');
-  jQuery(this).addClass('ativa');
-  jQuery(".possui-cnpj p").addClass('ok');
-  jQuery('input:radio[name=cualOS]')[1].checked = true;
-  jQuery("#cualOS-error").fadeOut();
-  jQuery(".sueldo").fadeOut();
-  jQuery(".monotributo").fadeIn();
-  jQuery(".datos-contacto").fadeIn();
-  
-  });
-  // AO CARREGAR A PÁGINA, VERIFICA SE TEM NA URL "INDIVIDUAL", "FAMILIAR" OU "EMPRESARIAL".
-  var url = window.location.href;
-  if(url.indexOf('btn-vos') > -1){
-  jQuery(".tipo-de-plano b").removeClass('ativa');
-  jQuery(".btn-vos").addClass('ativa');
-  jQuery(".tipo-de-plano p").addClass('ok');
-  jQuery('input:radio[name=idCapitas]')[0].checked = true;
-  jQuery(".possui-cnpj").hide();
-  jQuery(".possui-cnpj p").removeClass('ok');
-  jQuery("#idCapitas").fadeOut();
-  }
-  
-  if(url.indexOf('btn-pareja') > -1){
-  jQuery(".tipo-de-plano b, .possui-cnpj b").removeClass('ativa');
-  jQuery(".btn-pareja").addClass('ativa');
-  jQuery(".tipo-de-plano p").addClass('ok');
-  jQuery('input:radio[name=idCapitas]')[1].checked = true;
-  jQuery(".possui-cnpj").fadeIn();
-  jQuery("#idCapitas-error").fadeOut();
-  }
-  
-  if(url.indexOf('btn-vosehijo') > -1){
-  jQuery(".tipo-de-plano b").removeClass('ativa');
-  jQuery(".btn-vosehijo").addClass('ativa');
-  jQuery(".tipo-de-plano p").addClass('ok');
-  jQuery('input:radio[name=idCapitas]')[2].checked = true;
-  jQuery(".possui-cnpj").hide();
-  jQuery(".possui-cnpj p").removeClass('ok');
-  jQuery("#idCapitas-error").fadeOut();
-  }
-  
-  if(url.indexOf('btn-parejaehijo') > -1){
-      jQuery(".tipo-de-plano b").removeClass('ativa');
-      jQuery(".btn-parejaehijo").addClass('ativa');
-      jQuery(".tipo-de-plano p").addClass('ok');
-      jQuery('input:radio[name=idCapitas]')[3].checked = true;
-      jQuery(".possui-cnpj").hide();
-      jQuery(".possui-cnpj p").removeClass('ok');
-      jQuery("#idCapitas-error").fadeOut();
-      }
-      
-      // jQuery(window).load(function (){
-  
-      //     if(jQuery(window).width() >=950) {
-      //         jQuery('.bandeiras img').click(function(){
-      //             jQuery("html, body").animate({ scrollTop: jQuery(".contact-form-cotacao").offset().top - 120 }, 1000);
-      //         });
-      //     } else {
-      //         jQuery('.bandeiras img').click(function(){
-      //             jQuery("html, body").animate({ scrollTop: jQuery(".contact-form-cotacao").offset().top }, 1000);
-             
-      //             jQuery('.btn-sin-os').click(function() { jQuery("html, body").animate({ scrollTop: jQuery(this).offset().top - 65 }, 1000); });
-      //             jQuery('.btn-con-os').click(function() { jQuery("html, body").animate({ scrollTop: jQuery(this).offset().top - 65 }, 1000); });
-      //             jQuery('.btn-rel-os').click(function() { jQuery("html, body").animate({ scrollTop: jQuery(this).offset().top - 65 }, 1000); });
-      //             jQuery('.btn-mon-os').click(function() { jQuery("html, body").animate({ scrollTop: jQuery(this).offset().top - 65 }, 1000); });
-      //         });
-      
-      //         jQuery('.campo-nome').focus(function(){ jQuery("html, body").animate({ scrollTop: jQuery(this).offset().top - 45 }, 1000); });
-      //         jQuery('.campo-email').focus(function(){ jQuery("html, body").animate({ scrollTop: jQuery(this).offset().top - 45 }, 1000); });
-      //         jQuery('.Prefijo').focus(function(){ jQuery("html, body").animate({ scrollTop: jQuery(this).offset().top - 45 }, 1000); });
-      //         jQuery('.campo-telefone').focus(function(){ jQuery("html, body").animate({ scrollTop: jQuery(this).offset().top - 45 }, 1000); });
-      
-      //         jQuery('.campo-nome, .campo-email, .Prefijo, .campo-telefone').focus(function(){
-      //             jQuery(".margin-rodape").addClass("remove-altura-margin-rodape");
-      //             jQuery(".telefones-rodape").addClass("remove-telefone-rodape");
-      //         });
-      
-      //         jQuery('.campo-nome, .campo-email, .Prefijo, .campo-telefone').blur(function(){
-      //             jQuery(".margin-rodape").removeClass("remove-altura-margin-rodape");
-      //             jQuery(".telefones-rodape").removeClass("remove-telefone-rodape");
-      //         });
-      //     }
-      
-      // });
-      
-  
-  
-  
-  
-      
-      // jQuery(".campo-edad").fadeIn(function() {
-      //     document.querySelector(".campo-edad").scrollIntoView({ behavior: 'smooth', block: 'center' });
-      
-      // });
-      
-      
-      // jQuery(".campo-edad").fadeIn(function() {
-      //     jQuery('html, body').animate({
-      //         scrollTop: jQuery(".campo-edad").offset().top - (jQuery(window).height() / 2)
-      //       }, 1000);
-      // });
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  // MÁSCARAS
-  // jQuery("#ddd").mask("900");
-  jQuery("#edad_1").mask("00");
-  jQuery("#edad_2").mask("00");
-  jQuery("#hijos_num").mask("9");
-  jQuery("#telefone").mask("9000000000");
-  // jQuery("#sueldo").mask("0.000.000");
-  // jQuery("#cpf").mask("000.000.000-00");
-  // jQuery("#cnpj").mask("00.000.000/0000-00");
-  
-  
-  
-  
-  
-  });
-  
-  
-  }(window.jQuery || window.jQuery));
-  
-  
-                  
-                  
-                  
+    // Al principio, si el usuario escribe en el email, ya habilitamos el envío
+    $('#btn-flujo').click(function() {
+        var $form = $(this).closest('form');
+        var $datosContacto = $form.find('#datos-contacto');
+
+        // SI EL CONTACTO ESTÁ OCULTO: Lo mostramos
+        if ($datosContacto.is(':hidden')) {
+            
+            // 1. Validar que al menos haya puesto la edad (opcional)
+            if ($('#edad_1').val() === "") {
+                alert("Por favor, indicanos tu edad antes de continuar.");
+                $('#edad_1').focus();
+                return;
+            }
+
+            // 2. Mostrar campos de contacto con efecto
+            $datosContacto.slideDown(500);
+            
+            // 3. Transformar el botón para el paso final
+            $(this).val('¡SOLICITAR PRECIOS AHORA!');
+            $(this).attr('type', 'submit'); // Ahora sí es un submit
+            
+            // 4. Scroll suave al nombre para que sepa dónde seguir
+            $('html, body').animate({
+                scrollTop: $datosContacto.offset().top - 100
+            }, 800);
+
+        }
+    });
+
+    // Si el usuario vuelve a cambiar el tipo de plan, podrías resetear el botón
+    $('.btn-vos, .btn-pareja, .btn-vosehijo, .btn-parejaehijo').click(function() {
+        // Cada vez que eligen quién ingresa, nos aseguramos que las edades se vean
+        $('.edades').fadeIn();
+    });
+});

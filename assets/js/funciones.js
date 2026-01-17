@@ -136,30 +136,29 @@ function finalizarWhatsapp(formClass) {
 }
 
 function finalizarCompleto(formClass) {
+    console.log('Inicia proceso de envío...');
     var form = document.querySelector(formClass);
-    var boton = form.querySelector('#submit-completo');
-    var loader = form.querySelector('.loader1');
-    
-    // Guardamos cookies antes de enviar
-    salvaCookies();
-
-    boton.disabled = true;
-    loader.style.display = 'block';
+    var boton = form.querySelector('#btn-flujo');
+var loader = form.querySelector('.loader-form');    
+    // 1. Bloqueo de seguridad y altura fija para que no "se agache"
+    if (boton) {
+        boton.style.height = boton.offsetHeight + 'px'; 
+        boton.disabled = true;
+        boton.value = "PROCESANDO..."; 
+    }
+    if (loader) loader.style.display = 'block';
 
     var datawh = {
         'formulario_pagina': $('#formulario_pagina').val(),
         'Operadora': $('#Operadora').val(),
         'idCapitas': $('input[name="idCapitas"]:checked').val(),
         'edad_1': $('#edad_1').val(),
-        'edad_2': $('#edad_2').val(),
-        'hijos_num': $('#hijos_num').val(),
+        'edad_2': $('#edad_2').val() || 'N/A',
+        'hijos_num': $('#hijos_num').val() || '0',
         'poseeOS': $('input[name="poseeOS"]:checked').val(),
-        'sueldo': $('#sueldo').val(),
         'name': $('#Name').val(),
         'telefone': $('#phone').val(),
         'email': $('#email').val(),
-        'categoriaMono': $('#categoriaMono').val(),
-        'aportantesMono': $('#aportantesMono').val(),
         'formulario':'completo'
     };
 
@@ -168,28 +167,60 @@ function finalizarCompleto(formClass) {
     xhr.setRequestHeader('Content-Type', 'application/json');
 
     xhr.onload = function () {
-        if (xhr.status === 200) {
-            boton.value = '¡COTIZACIÓN ENVIADA!';
-            loader.style.display = 'none';
-            $('#contact-form')[0].reset();
-            
-            // ✅ ENVIAR CONVERSIÓN AQUÍ
-            enviarConversionFormulario(datawh);
-            
-            setTimeout(function() {
-                window.location.href = '/gracias';
-            }, 3000);
+        if (xhr.status === 200 || xhr.status === 201) {
+            console.log('Éxito en el servidor');
+
+            // 2. Feedback de éxito en el botón
+            if (boton) {
+                boton.value = '¡COTIZACIÓN ENVIADA!';
+                boton.style.backgroundColor = '#28a745';
+            }
+
+            // 3. Disparar conversión GTM
+            if (typeof enviarConversionFormulario === 'function') {
+                enviarConversionFormulario(datawh);
+            }
+
+            // 4. Esperamos 3 segundos para que vea el éxito y LUEGO limpiamos y nos vamos
+          setTimeout(function() {
+    // 1. Limpiamos los valores (esto pone los radios en 'Individual' de nuevo)
+    form.reset();
+
+    // 2. FORZAMOS LA COMPRESIÓN (Cerramos todos los bloques que se abrieron)
+    // Ocultamos todo lo que no sea el Titular
+    $('.campo-edad .campo-edad-pareja, .hijos_num, .plano-selecionado, .posee-cnpj, .datos-contacto').hide();
+    
+    // 3. Restauramos el botón a su estado original
+    if (boton) {
+        boton.disabled = false;
+        boton.value = "VER PRECIOS Y COMPARAR";
+        boton.style.backgroundColor = '';
+        boton.style.height = ''; 
+    }
+
+    // 4. Ocultamos el loader
+    if (loader) loader.style.display = 'none';
+
+    // 5. REDIRECCIÓN
+    console.log('Formulario comprimido y reseteado. Navegando...');
+    window.location.href = '/gracias';
+}, 3000);
+
         } else {
-            console.log('Error en la solicitud: ' + xhr.statusText);
-            boton.disabled = false;
-            loader.style.display = 'none';
+            // Manejo de error
+            alert('Hubo un error en el servidor.');
+            if (boton) {
+                boton.disabled = false;
+                boton.value = "VER PRECIOS Y COMPARAR";
+            }
+            if (loader) loader.style.display = 'none';
         }
     };
-    
+
     xhr.onerror = function () {
-        alert('Error en la conexión');
-        boton.disabled = false;
-        loader.style.display = 'none';
+        alert('Error de conexión');
+        if (boton) boton.disabled = false;
+        if (loader) loader.style.display = 'none';
     };
 
     xhr.send(JSON.stringify(datawh));
